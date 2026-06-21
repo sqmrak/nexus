@@ -44,6 +44,12 @@ impl Cgroups {
         Ok(usable)
     }
 
+    // every controller the kernel exposes at the unified cgroup root.
+    // structural: no name list, reads /sys/fs/cgroup/cgroup.controllers
+    pub fn all_available(&self) -> Vec<String> {
+        read_controllers(&Path::new(CGROUP2_ROOT).join(vocab::CG_CONTROLLERS))
+    }
+
     pub fn create(&self, scope: &str) -> Result<PathBuf> {
         let p = self.scope_path(scope);
         mkdir_all(&p)?;

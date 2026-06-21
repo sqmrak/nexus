@@ -7,10 +7,10 @@ use crate::sys::{mount, nsproc};
 use std::os::fd::AsFd;
 use std::path::Path;
 
-// mount the linux pseudo-filesystems and a tmpfs for runtime state. the
-// content store is read from disk, not mounted here
-pub fn early_mounts(layout: &Layout) -> Result<()> {
-    for (fstype, target) in paths::PSEUDO {
+// mount pseudo-filesystems from config and a tmpfs for runtime state.
+// the content store is read from disk, not mounted here
+pub fn early_mounts(layout: &Layout, pseudo: &[(String, String)]) -> Result<()> {
+    for (fstype, target) in pseudo {
         mount_pseudo(fstype, target)?;
     }
     let run = layout.run();
@@ -30,10 +30,10 @@ fn mount_pseudo(fstype: &str, target: &str) -> Result<()> {
 
 // pseudo-filesystems are carried across instead of remounted so live state
 // (processes, mounts) isn't lost during the pivot
-pub fn switch_root(new_root: &str) -> Result<()> {
+pub fn switch_root(new_root: &str, pseudo: &[(String, String)]) -> Result<()> {
     // move each pseudo-mount to its target under new_root so /proc, /sys
     // and /dev survive the pivot
-    for (_, m) in paths::PSEUDO {
+    for (_, m) in pseudo {
         let dst = Path::new(new_root).join(m.trim_start_matches('/'));
         paths::mkdir_all(&dst)?;
         nsproc::move_mount_path(m, &dst.display().to_string())?;

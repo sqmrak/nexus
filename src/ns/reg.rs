@@ -33,6 +33,7 @@ impl Registry {
         layout: &Layout,
         desc: &LayerDescriptor,
         backend: &(dyn StoreBackend + Sync),
+        globals: &[String],
     ) -> Result<Layer> {
         if let Some(e) = self.built.get_mut(&desc.id) {
             e.last_used = Instant::now();
@@ -47,7 +48,8 @@ impl Registry {
         let (go_tx, go_rx) = mpsc::channel();
 
         let (layer, mounts) = std::thread::scope(|s| -> Result<(Layer, Mounts)> {
-            let handle = s.spawn(move || build_namespace(layout, backend, desc, &tid_tx, &go_rx));
+            let handle =
+                s.spawn(move || build_namespace(layout, backend, desc, globals, &tid_tx, &go_rx));
 
             // pin the namespace then release the build thread regardless of outcome
             let pinned = match tid_rx.recv() {

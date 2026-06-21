@@ -98,14 +98,6 @@ impl Default for Layout {
 // the calling thread's mount namespace link, bound to persist a layer
 pub const SELF_NS_MNT: &str = "/proc/self/ns/mnt";
 
-// linux pseudo-filesystems mounted in early userspace, as (fstype, target).
-// fixed: these are absolute regardless of the meta-distro root
-pub const PSEUDO: &[(&str, &str)] = &[("proc", "/proc"), ("sysfs", "/sys"), ("devtmpfs", "/dev")];
-
-// paths shared across all layers, bound in from outside. a global that is
-// absent is skipped at bind time
-pub const GLOBALS: &[&str] = &["/home", "/dev", "/proc", "/sys", "/run/user", "/tmp", "/boot"];
-
 // the unified cgroup v2 hierarchy. absolute, like the pseudo-filesystems:
 // the kernel mounts it here regardless of the meta-distro root
 pub const CGROUP2_ROOT: &str = "/sys/fs/cgroup";

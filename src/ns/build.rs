@@ -16,10 +16,11 @@ pub fn build_namespace(
     layout: &Layout,
     backend: &dyn StoreBackend,
     desc: &LayerDescriptor,
+    globals: &[String],
     tid_tx: &Sender<Result<Pid>>,
     go_rx: &Receiver<()>,
 ) -> Result<(Layer, Mounts)> {
-    let mounts = match compose_and_pivot(layout, backend, desc) {
+    let mounts = match compose_and_pivot(layout, backend, desc, globals) {
         Ok(mounts) => {
             // hand the parent our tid so it can pin us from outside
             if tid_tx.send(Ok(rustix::thread::gettid())).is_err() {
@@ -46,6 +47,7 @@ fn compose_and_pivot(
     layout: &Layout,
     backend: &dyn StoreBackend,
     desc: &LayerDescriptor,
+    globals: &[String],
 ) -> Result<Mounts> {
     probe::require_mount_api()?;
     trace_field!("compose layer {}", desc.id);
@@ -69,7 +71,7 @@ fn compose_and_pivot(
     // mount the layer root at the stage through the chosen backend,
     // idmapping it when a userns is given
     let mounts = backend.mount_root(desc, &stage, userns.as_ref().map(|f| f.as_fd()))?;
-    mount::bind_globals(&stage)?;
+    mount::bind_globals(&stage, globals)?;
 
     let old_root = stage.join(OLD_ROOT_NAME);
     std::fs::create_dir_all(&old_root).map_err(|e| Error::Init(format!("mkdir oldroot: {e}")))?;

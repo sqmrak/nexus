@@ -52,11 +52,13 @@ impl Core {
         // enable cgroup controllers best-effort: a failure means limits are
         // not enforced, not that the system cannot run
         if crate::sys::probe::cgroup_usable() {
-            let _ = core.cgroups.prepare(&[
-                crate::vocab::CG_CTRL_MEMORY,
-                crate::vocab::CG_CTRL_PIDS,
-                crate::vocab::CG_CTRL_CPU,
-            ]);
+            let want: Vec<_> = if core.system.cgroup_controllers.is_empty() {
+                core.cgroups.all_available()
+            } else {
+                core.system.cgroup_controllers.clone()
+            };
+            let want_refs: Vec<&str> = want.iter().map(|s| s.as_str()).collect();
+            let _ = core.cgroups.prepare(&want_refs);
         }
         core
     }
@@ -72,7 +74,8 @@ impl Core {
         env: &[(String, String)],
     ) -> Result<std::convert::Infallible> {
         let desc = self.find(id)?.clone();
-        let layer = self.registry.ensure(&self.layout, &desc, &*self.backend)?;
+        let layer =
+            self.registry.ensure(&self.layout, &desc, &*self.backend, &self.system.globals)?;
         // enter the layer's resource scope before launch so cgroup limits
         // survive setns and execve
         self.enter_scope(&desc)?;
@@ -117,7 +120,7 @@ impl Core {
         // an invalid id cannot name a real layer, so it is simply unknown
         let id = LayerId::new(id).map_err(|_| Error::UnknownLayer(id.to_string()))?;
         let desc = self.find(&id)?.clone();
-        self.registry.ensure(&self.layout, &desc, &*self.backend)?;
+        self.registry.ensure(&self.layout, &desc, &*self.backend, &self.system.globals)?;
         Ok(())
     }
 
@@ -158,10 +161,11 @@ impl Core {
         // reap kernel-spawned children during the boot window; they would
         // zombie under pid 1 otherwise. stopped at handoff
         let reaper = Reaper::spawn()?;
-        early_mounts(&self.layout)?;
+        early_mounts(&self.layout, &self.system.pseudo)?;
         let id = selector.select(&self.layers, health, &self.layout.store())?;
         let desc = self.find(&id)?.clone();
-        let layer = self.registry.ensure(&self.layout, &desc, &*self.backend)?;
+        let layer =
+            self.registry.ensure(&self.layout, &desc, &*self.backend, &self.system.globals)?;
         reaper.stop();
         // the selected layer, including the native init we are about to exec,
         // runs under the layer's resource scope
