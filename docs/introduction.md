@@ -1,6 +1,6 @@
 # nexus
 
-nexus is a runtime for composable meta-distributions. it is pure mechanism: no
+nexus is the core for composable meta-distributions. it is pure mechanism: no
 fuse, no path rewriting, no per-distro branching. everything it does is built
 from kernel primitives (mount namespaces, overlay, erofs, idmapped mounts,
 landlock, seccomp, cgroup v2) and a content-addressed store keyed by blake3.
@@ -12,24 +12,25 @@ that is policy, and policy lives in a separate project that plugs in through
 hook traits. this book documents the mechanism, the contract a policy builds
 on, and the kernel behaviour each step relies on.
 
-## the one split
+## mechanism vs policy
 
-the whole design rests on a single line, drawn once and kept sharp.
+nexus implements mechanism only:
 
 - mechanism: compose a layer and run a process in it. this is nexus.
 - policy: which layer a command resolves to, where layers come from, which
   layer boots. this is a meta-distribution built on top, plugged in through
   the hook traits.
 
-the kernel never grows distro knowledge. anything that asks "which
-distribution" is a hook impl, never a branch in nexus. adding a distro or a
-delivery method is adding data or a trait impl, never editing a central
-switch.
+nexus contains no distribution-specific code. a decision that depends on
+"which distribution" is implemented as a hook trait or a descriptor field,
+not as a conditional in nexus. adding a distro means adding a descriptor;
+adding a delivery method means implementing `StoreBackend`.
 
 ## what it does
 
 - store > import rootfs trees into a content-addressed pool keyed by blake3.
-  files are deduplicated by hash. a tree is checked out as a hardlink forest.
+  files are deduplicated by hash. a tree is checked out as hardlinks into the
+  pool, so a checked-out tree adds directory entries but no file data.
 - generations > atomic rollback by symlink swap. commit a set of tree hashes,
   activate a generation, roll back to any previous one.
 - compose > mount a layer root from the store through overlay or erofs. bind
@@ -37,7 +38,7 @@ switch.
   namespace is supplied.
 - run > open a persisted mount namespace, setns into it, drop privilege
   (no_new_privs, capabilities, landlock, seccomp), execve the target.
-- boot > the real pid-1 sequence: block fatal signals, spawn an orphan reaper,
+- boot > the pid-1 sequence: block fatal signals, spawn an orphan reaper,
   bring up /proc /sys /dev, select a healthy layer by priority, compose it,
   hand off to its native init.
 - sandbox > per-layer confinement: landlock filesystem rules, a seccomp
@@ -57,7 +58,7 @@ block_signals > reaper > early_mounts > select > compose > enter_scope > handoff
 
 ## how to read this book
 
-- the model chapters describe the durable nouns: layers, the store,
+- the model chapters define the core data types: layers, the store,
   generations, namespaces. read these first.
 - the path chapters walk the two sequences end to end: boot (pid 1) and run
   (every other launch).

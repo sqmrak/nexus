@@ -16,8 +16,8 @@ crosses into a userspace process, gets resolved, and crosses back. etcfs merges
   itself; it has to ask a userspace daemon.
 - selinux and apparmor see the virtual fuse paths, not the real files, so mac
   labels do not match and policy breaks.
-- `strace` and audit show the synthesised paths, so tracing lies about what a
-  program actually touched.
+- `strace` and audit show the synthesised paths, not the backing files, so a
+  trace does not name the real path a program opened.
 - there is one pid 1 for the whole machine, shared across every stratum.
 
 ## composition before launch
@@ -32,10 +32,10 @@ bedrock:  open() > fuse > userspace daemon > real fs > back   (every call)
 nexus:    compose once (mounts) > open() > native vfs         (every call)
 ```
 
-because the paths a process sees are real kernel mounts, the things that read
-paths keep working: selinux and apparmor see real files, audit logs real
-paths, `strace` tells the truth, and the page cache is shared the way the
-kernel intends.
+because the paths a process sees are real kernel mounts, tools that resolve
+paths see the backing files directly: selinux and apparmor match labels on the
+real inodes, audit and `strace` record the real paths, and the page cache is
+shared across layers that map the same object.
 
 ## a layer is a donor rootfs
 
@@ -59,9 +59,9 @@ block_signals > reaper > early_mounts > select > compose > enter_scope > handoff
 
 any layer can be init. selection filters by health first, so a layer whose
 loader is missing is skipped, and the next healthy layer by priority wins. a
-rescue layer is a guaranteed-healthy last resort: it only wins when no native
-or shadowed layer is healthy, which means the system is never left unbootable
-by a bad layer.
+rescue layer is selected only when no native or shadowed layer is healthy, so a
+broken layer does not leave the system unbootable as long as one healthy layer
+remains.
 
 ## the principles this enforces
 
@@ -86,4 +86,5 @@ by a bad layer.
   reversible.
 - not a package manager and not a distribution. nexus ships no kernel, no
   repo and no libc of its own.
-- no hidden writers to system state. state has one canonical write path.
+- no hidden writers to system state. all writes to system state go through one
+  code path.

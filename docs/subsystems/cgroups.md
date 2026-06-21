@@ -66,10 +66,10 @@ inherits the cgroup. `apply` is best-effort per field: an interface file that is
 absent (its controller is not enabled here) is skipped, not an error. `cpu.max`
 is written as `quota_us period_us`; `cpu.weight` is clamped to `1..=10000`.
 
-on a failed launch the process is still in the leaf, so `leave` steps it back to
-the unified root, the one cgroup exempt from the no-internal-process rule, which
-lets the now-empty leaf be removed. teardown is best-effort: a stale empty scope
-is swept later, never fatal.
+on a failed launch the process is still in the leaf, so `leave` moves it back to
+the unified root. the root is exempt from the no-internal-process rule, so a
+process can sit there while the now-empty leaf is removed. teardown is
+best-effort: a stale empty scope is removed on a later pass, never fatal.
 
 ## boot and run
 

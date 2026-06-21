@@ -51,8 +51,9 @@ move_mount(fd, target)         attach it at the destination
 opening the filesystem with `FSOPEN_CLOEXEC` and the mount with
 `FSMOUNT_CLOEXEC` keeps the fds from leaking across `exec`. `move_mount` uses
 `MOVE_MOUNT_F_EMPTY_PATH` so the source is named purely by the fd. idmapping a
-detached mount before `move_mount` is the whole point of the new api here: the
-mapping is applied while the tree is private, then attached atomically.
+detached mount before `move_mount` is why the new api is used here: the idmap is
+applied while the tree is detached and unreachable, then the tree is attached in
+one `move_mount` call.
 
 ## the writable upper, by flag
 

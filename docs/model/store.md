@@ -59,10 +59,10 @@ sorted, the materializer creates parents before children and needs no
 
 ## deduplication and hardlinks
 
-a checked-out tree is a forest of hardlinks into the object pool. one unique
-file is stored once however many trees reference it; each tree just adds a link.
-this is what makes a layer cheap to add: only its genuinely new files cost
-disk.
+a checked-out tree consists of hardlinks into the object pool. one unique file
+is stored once however many trees reference it; each tree adds a link, not a
+copy. so adding a layer costs disk only for the files it does not share with an
+existing object.
 
 `Store::checkout(tree, dst)` copies a tree to an arbitrary destination,
 hardlinking files so it stays cheap, for a backend that wants the tree at a

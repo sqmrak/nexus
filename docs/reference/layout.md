@@ -11,7 +11,7 @@ relocate the whole tree without touching code. the type lives in `paths.rs`.
   store/                content-addressed object store
     objects/            objects, named <blake3-hex>.<octal-mode>
     objects/.lock       the exclusive import lock
-    <tree-hash>/        a materialized tree (hardlink forest)
+    <tree-hash>/        a materialized tree (hardlinks into objects/)
   state/                writable per-layer state
     upper/<layer>       overlay upper (persistent layers)
     work/<layer>        overlay work dir

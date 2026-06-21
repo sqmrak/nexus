@@ -1,8 +1,9 @@
 # boot: pid 1
 
-when nexus runs as pid 1 it owns the whole sequence from a bare kernel to a
-running native init. every step must succeed or the system does not come up, so
-the order is chosen to keep the machine recoverable even when layers are broken.
+when nexus runs as pid 1 it executes the full sequence from a freshly booted
+kernel to a running native init. every step must succeed or the system does not
+come up, so the order is chosen to keep the machine recoverable when layers are
+broken.
 the sequence lives in `Core::boot_with`:
 
 ```
@@ -41,8 +42,8 @@ because a child can die between the last sweep and the thread's exit.
 ## early_mounts
 
 the pseudo-filesystems come up next. they do not depend on any layer, so they
-succeed even if every layer is broken; this is what keeps the system bootable.
-`early_mounts` runs out of initramfs before any layer is touched.
+succeed even if every layer is broken, which is why this step runs before layer
+selection. `early_mounts` runs out of initramfs before any layer is touched.
 
 for each entry in `paths::PSEUDO` it mounts the filesystem through the new mount
 api:
@@ -91,7 +92,7 @@ pin mechanism and [storage backends](../subsystems/backends.md) for how the
 root is mounted.
 
 once the layer is composed the reaper is stopped: the namespace is up, and from
-here the layer's own init owns the process tree.
+here the layer's own init is responsible for reaping the process tree.
 
 ## enter_scope
 

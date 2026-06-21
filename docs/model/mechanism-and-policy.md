@@ -29,16 +29,16 @@ overrides only the traits whose decisions it wants to own.
 
 ## why a trait and not a flag
 
-a flag enumerates the choices the core author imagined. a trait lets a fork
-make a choice the core author never imagined, without editing the core. the
-rule across the codebase is the same: prefer a trait impl or a data entry over
-a new branch. when a decision depends on "which distribution", it is a hook,
-not a `match`.
+a flag exposes a fixed set of choices defined in nexus. a trait lets a fork
+supply a choice that is not defined in nexus, without modifying it. the rule
+throughout the codebase is the same: prefer a trait impl or a data entry over a
+new conditional. a decision that depends on "which distribution" is a hook, not
+a `match`.
 
-this is why layer behaviour is carried as data on a descriptor (flags, libc
-identity, sandbox, resource limits) rather than inferred from a distro name.
-adding a distro is adding a descriptor. adding a delivery method is adding a
-`StoreBackend`. nothing in nexus says the word for any distribution.
+so layer behaviour is carried as data on a descriptor (flags, libc identity,
+sandbox, resource limits) rather than inferred from a distro name. adding a
+distro is adding a descriptor; adding a delivery method is adding a
+`StoreBackend`. no distribution name appears in nexus source.
 
 ## the facade
 
