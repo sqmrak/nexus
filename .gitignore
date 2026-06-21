@@ -1,0 +1,5 @@
+/target
+/book
+Cargo.lock
+*.swp
+.DS_Store

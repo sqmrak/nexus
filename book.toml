@@ -1,0 +1,18 @@
+[book]
+authors = ["sqmrak"]
+language = "en"
+title = "nexus"
+src = "docs"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "ayu"
+preferred-dark-theme = "ayu"
+git-repository-url = "https://github.com/sqmrak/nexus"
+edit-url-template = "https://github.com/sqmrak/nexus/edit/main/{path}"
+
+[output.html.fold]
+enable = true
+level = 1
