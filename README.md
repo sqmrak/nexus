@@ -11,11 +11,7 @@ https://sqmrak.github.io/nexus
 
 ## thanks
 
-bedrock linux showed that one machine can run many distributions at once, and
-that the idea is worth doing well. nexus owes it the whole premise. where
-bedrock composes in userspace through fuse, nexus composes before launch so the
-kernel handles every path natively; that is a different trade, not a criticism
-of the project that charted the territory first
+https://github.com/bedrocklinux/bedrocklinux-userland
 
 ## license
 
