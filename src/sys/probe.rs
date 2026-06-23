@@ -116,7 +116,7 @@ fn probe_in_child() -> bool {
     }
     let _ = crate::sys::nsproc::make_private("/");
 
-     // a temporary 1:1 id mapping; the values are arbitrary for the probe
+    // a temporary 1:1 id mapping; the values are arbitrary for the probe
     let map = match crate::api::IdMap::new(100_000, 1) {
         Ok(m) => m,
         Err(_) => return false,
