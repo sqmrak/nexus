@@ -10,7 +10,7 @@ use crate::init::{DefaultHealthCheck, DefaultSelector, Reaper, block_signals, ea
 use crate::ns::Registry;
 use crate::paths::Layout;
 use crate::state::System;
-use crate::store::{ErofsBackend, Gens, OverlayBackend, Store};
+use crate::store::{ErofsBackend, Generations, OverlayBackend, Store};
 use crate::sys::cgroup::Cgroups;
 
 type Backend = Box<dyn StoreBackend + Sync>;
@@ -21,7 +21,7 @@ pub struct Core {
     backend: Backend,
     system: System,
     registry: Registry,
-    gens: Gens,
+    gens: Generations,
     cgroups: Cgroups,
 }
 
@@ -32,7 +32,7 @@ impl Core {
         backend: Backend,
         system: System,
     ) -> Self {
-        let gens = Gens::new(layout.gens());
+        let gens = Generations::new(layout.gens());
         let cgroups = Cgroups::new(system.cgroup_root.clone());
         Core { layout, layers, backend, system, registry: Registry::new(), gens, cgroups }
     }
@@ -116,7 +116,7 @@ impl Core {
     }
 
     // build and pin a layer's namespace ahead of use. for the daemon
-    pub fn warm(&mut self, id: &str) -> Result<()> {
+    pub fn build(&mut self, id: &str) -> Result<()> {
         // an invalid id cannot name a real layer, so it is simply unknown
         let id = LayerId::new(id).map_err(|_| Error::UnknownLayer(id.to_string()))?;
         let desc = self.find(&id)?.clone();

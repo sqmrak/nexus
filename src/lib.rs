@@ -1,6 +1,5 @@
-//! the meta-distribution engine. open a core from state on disk, compose
-//! layer namespaces from a content-addressed store, and run processes inside
-//! them or boot a native init as pid 1
+//! compose layered Linux namespaces from a content-addressed store and run
+//! processes inside them or boot a native init as pid 1
 
 #![forbid(unsafe_op_in_unsafe_fn)]
 
@@ -31,7 +30,7 @@ pub use control::{install_signal_stop, listener, serve, Reply, Request, Shutdown
 pub use init::{block_signals, early_mounts, switch_root, DefaultHealthCheck, DefaultSelector, Reaper};
 pub use paths::Layout;
 pub use state::{System, load_layers, load_system};
-pub use store::{ErofsBackend, Gens, OverlayBackend, Store};
+pub use store::{ErofsBackend, Generations, OverlayBackend, Store};
 
 pub use sys::cgroup::Cgroups;
 

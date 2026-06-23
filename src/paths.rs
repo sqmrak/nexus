@@ -89,7 +89,7 @@ impl Layout {
 }
 
 impl Default for Layout {
-    // the conventional root. one place to rebrand
+    // the conventional root. change this to relocate the layout
     fn default() -> Self {
         Layout::new("/rust")
     }

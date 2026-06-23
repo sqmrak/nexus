@@ -8,5 +8,5 @@ mod overlay;
 
 pub use cas::Store;
 pub use erofs::ErofsBackend;
-pub use generations::Gens;
+pub use generations::Generations;
 pub use overlay::OverlayBackend;

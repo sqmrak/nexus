@@ -180,7 +180,7 @@ mod tests {
     }
 
     #[test]
-    fn atomic_beats_ephemeral_no_upper_at_all() {
+    fn atomic_overrides_ephemeral_no_upper() {
         let mut d = desc("void");
         d.flags.ephemeral = true;
         d.flags.atomic = true;

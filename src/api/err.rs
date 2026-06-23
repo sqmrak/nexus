@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn string_errors_have_no_source() {
-        assert!(Error::Config("boom".into()).source().is_none());
+        assert!(Error::Config("test".into()).source().is_none());
         assert!(Error::NoHealthyLayer.source().is_none());
         assert!(Error::Corrupt { hash: "x".into() }.source().is_none());
     }

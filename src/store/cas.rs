@@ -13,7 +13,7 @@ const STREAM_BUF: usize = 64 * 1024;
 
 // unique-per-process suffix for staged object temp files, so concurrent
 // imports never collide on the same name
-static STAGE_NONCE: AtomicU64 = AtomicU64::new(0);
+static STAGE_SEQ: AtomicU64 = AtomicU64::new(0);
 
 // an exclusive flock on a lock file under the store, held while objects
 // are placed. serializes across processes, not just threads
@@ -274,7 +274,7 @@ impl Store {
 
     // copy a file into a temp object while hashing it in one pass
     fn stage_object(&self, src: &Path) -> Result<(String, PathBuf)> {
-        let nonce = STAGE_NONCE.fetch_add(1, Ordering::Relaxed);
+        let nonce = STAGE_SEQ.fetch_add(1, Ordering::Relaxed);
         let tmp = self.objects().join(format!(".stage-{}-{nonce}", std::process::id()));
 
         let mut input = std::fs::File::open(src).map_err(|e| mk("open", e))?;

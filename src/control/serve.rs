@@ -127,7 +127,7 @@ fn handle(stream: UnixStream, core: &mut Core) -> Result<()> {
 
 fn dispatch(req: Request, core: &mut Core) -> Reply {
     match req {
-        Request::Build(id) => match core.warm(&id) {
+        Request::Build(id) => match core.build(&id) {
             Ok(()) => Reply::Ok,
             Err(e) => Reply::Err(e.to_string()),
         },

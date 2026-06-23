@@ -4,13 +4,13 @@
 use crate::api::{Error, Gen, ObjectHash, Result};
 use std::path::{Path, PathBuf};
 
-pub struct Gens {
+pub struct Generations {
     root: PathBuf,
 }
 
-impl Gens {
+impl Generations {
     pub fn new(root: impl Into<PathBuf>) -> Self {
-        Gens { root: root.into() }
+        Generations { root: root.into() }
     }
 
     pub fn path(&self, g: Gen) -> PathBuf {
@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn commit_then_activate_roundtrips() {
         let dir = scratch("commit");
-        let g = Gens::new(dir.path());
+        let g = Generations::new(dir.path());
         let first = g.commit(&[h("aaa"), h("bbb")]).unwrap();
         assert_eq!(first, Gen::new(1));
         g.activate(first).unwrap();
@@ -145,7 +145,7 @@ mod tests {
     #[test]
     fn rollback_to_previous() {
         let dir = scratch("rollback");
-        let g = Gens::new(dir.path());
+        let g = Generations::new(dir.path());
         let g1 = g.commit(&[h("v1")]).unwrap();
         g.activate(g1).unwrap();
         let g2 = g.commit(&[h("v2")]).unwrap();
@@ -159,14 +159,14 @@ mod tests {
     #[test]
     fn activate_missing_fails() {
         let dir = scratch("missing");
-        let g = Gens::new(dir.path());
+        let g = Generations::new(dir.path());
         assert!(g.activate(Gen::new(7)).is_err());
     }
 
     #[test]
     fn all_lists_gens_and_trees_reads_manifest() {
         let dir = scratch("listing");
-        let g = Gens::new(dir.path());
+        let g = Generations::new(dir.path());
         let g1 = g.commit(&[h("treeA"), h("treeB")]).unwrap();
         let g2 = g.commit(&[h("treeC")]).unwrap();
         assert_eq!(g.all().unwrap(), vec![g1, g2]);
