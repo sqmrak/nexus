@@ -1,5 +1,5 @@
 // the registry daemon: a management socket over the core. the hot path
-// never uses it; it warms, evicts and reports layers for tooling
+// never uses it; it builds, evicts and reports layers for tooling
 
 mod proto;
 mod serve;

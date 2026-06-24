@@ -34,11 +34,11 @@ pub use store::{ErofsBackend, Generations, OverlayBackend, Store};
 
 pub use sys::cgroup::Cgroups;
 
-/// the facade policy drives. holds layers, backend, the namespace registry,
+/// the entry point policy drives. holds layers, backend, the namespace registry,
 /// and exposes boot (pid 1) and run (setns + exec) operations
 pub use core::Core;
 
-/// whether idmapped mounts actually apply in this environment (not just
+/// whether idmapped mounts apply in this environment (not just
 /// whether the kernel has the syscall). probes end to end; result cached
 pub fn idmap_usable() -> bool {
     sys::probe::idmap_usable()

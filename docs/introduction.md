@@ -44,7 +44,7 @@ adding a delivery method means implementing `StoreBackend`.
 - sandbox > per-layer confinement: landlock filesystem rules, a seccomp
   baseline filter, capability bounding sets, cgroup v2 resource ceilings
   (memory, pids, cpu).
-- control daemon > a unix socket that warms, evicts and lists layers for
+- control daemon > a unix socket that build , evicts and lists layers for
   tooling. socket-activation friendly. the hot path never touches it.
 
 ## status
@@ -80,5 +80,5 @@ src/exec/     enter a layer and exec
 src/init/     pid 1 mechanism, select and health defaults
 src/control/  the management socket daemon
 src/state/    parse layers.toml and nexus.toml
-src/core.rs   the facade: open, boot, run, warm, evict, gc
+src/core.rs   entry point: open, boot, run, warm, evict, gc
 ```

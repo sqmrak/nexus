@@ -129,14 +129,17 @@ impl Store {
         Ok(checked)
     }
 
-    // copy a stored tree to an arbitrary destination, hardlinking files so
-    // it stays cheap. for a backend that wants the tree at a fixed path
+    // copy a stored tree to a destination, built in a temp sibling then
+    // renamed atomically so a crash never leaves a half-populated tree
     pub fn checkout(&self, tree: &ObjectHash, dst: &Path) -> Result<()> {
         let src = self.tree_path(tree);
         if !src.is_dir() {
             return Err(Error::Corrupt { hash: tree.to_string() });
         }
-        copy_tree(&src, dst, true)
+        let tmp = dst.with_extension("tmp");
+        let _ = std::fs::remove_dir_all(&tmp);
+        copy_tree(&src, &tmp, true)?;
+        std::fs::rename(&tmp, dst).map_err(|e| mk("rename", e))
     }
 
     // verify the objects one tree references. tree files are hardlinks to

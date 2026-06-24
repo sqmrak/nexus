@@ -38,8 +38,14 @@ impl ErofsBackend {
         mount::mount_tmpfs(&base.display().to_string())?;
         let upper = base.join("upper");
         let work = base.join("work");
-        mkdir_all(&upper)?;
-        mkdir_all(&work)?;
+        if let Err(e) = mkdir_all(&upper) {
+            let _ = nsproc::unmount_detach(&base.display().to_string());
+            return Err(e);
+        }
+        if let Err(e) = mkdir_all(&work) {
+            let _ = nsproc::unmount_detach(&base.display().to_string());
+            return Err(e);
+        }
         Ok((upper.display().to_string(), work.display().to_string()))
     }
 }

@@ -40,7 +40,7 @@ sandbox, resource limits) rather than inferred from a distro name. adding a
 distro is adding a descriptor; adding a delivery method is adding a
 `StoreBackend`. no distribution name appears in nexus source.
 
-## the facade
+## entry point
 
 `Core` is the single object policy drives. it holds the layout, the loaded
 layer descriptors, the chosen backend, the system settings, the namespace
@@ -60,7 +60,7 @@ single-threaded (probing forks, and fork in a multi-threaded process is unsafe;
 see [kernel features and probing](../subsystems/probing.md)), then selects the
 backend named in `nexus.toml`. an unrecognised backend token falls back to
 overlay. it then enables the cgroup v2 controllers best-effort: if that fails,
-limits are simply not enforced, the system still runs.
+limits are not enforced, the system still runs.
 
 the operations on `Core` map one to one onto the things a meta-distro asks for:
 

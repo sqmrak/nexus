@@ -101,9 +101,9 @@ fn mount_root(&self, layer: &LayerDescriptor, target: &Path,
 the default `OverlayBackend` and `ErofsBackend` are the reference for the
 new-mount-api pattern and the upper-by-flag logic.
 
-## warm a layer from the daemon
+## build a layer from the daemon
 
-the control daemon turns a request into a core call. to warm a layer so its
+the control daemon turns a request into a core call. to build a layer so its
 first user-visible launch is hot:
 
 ```
@@ -114,7 +114,7 @@ $ printf 'list\n' | nc -U /run/nexus.sock
 void
 ```
 
-`build` maps to `core.warm`, `list` to `core.built_layers`. see
+`build` maps to `core.build`, `list` to `core.built_layers`. see
 [the control daemon](../subsystems/control.md) for the protocol.
 
 ## generations and rollback

@@ -93,7 +93,7 @@ pub trait LaunchStrategy {
 it returns `Infallible` because a successful launch replaces the process and
 never comes back; only a failure returns. the default `SetnsExec` does
 `setns > apply sandbox > execve`. a fork wanting lower launch latency (a zygote,
-a warm worker pool) implements its own strategy here.
+a pre-built worker pool) implements its own strategy here.
 
 ## where each trait fires
 

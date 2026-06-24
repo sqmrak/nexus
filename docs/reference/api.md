@@ -5,7 +5,7 @@ implementation detail a fork may replace. this chapter is a lookup list for the
 public surface. for the generated rustdoc, run `cargo doc --open` against the
 source tree.
 
-## the facade
+## entry point
 
 `Core` is the object policy drives. construct it, then call one operation.
 

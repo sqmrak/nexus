@@ -8,16 +8,31 @@ use std::os::fd::AsFd;
 use std::path::Path;
 
 // mount pseudo-filesystems from config and a tmpfs for runtime state.
-// the content store is read from disk, not mounted here
+// unmounts what succeeded on failure so no partial mounts are left behind
 pub fn early_mounts(layout: &Layout, pseudo: &[(String, String)]) -> Result<()> {
+    let mut targets = Vec::new();
     for (fstype, target) in pseudo {
         mount_pseudo(fstype, target)?;
+        targets.push(target.to_string());
     }
     let run = layout.run();
     paths::mkdir_all(&run)?;
-    mount_pseudo(crate::vocab::FS_TMPFS, &run.display().to_string())?;
-    paths::mkdir_all(&layout.run_ns())?;
+    if let Err(e) = mount_pseudo(crate::vocab::FS_TMPFS, &run.display().to_string()) {
+        unmount_all(&targets);
+        return Err(e);
+    }
+    targets.push(run.display().to_string());
+    if let Err(e) = paths::mkdir_all(&layout.run_ns()) {
+        unmount_all(&targets);
+        return Err(e);
+    }
     Ok(())
+}
+
+fn unmount_all(targets: &[String]) {
+    for t in targets.iter().rev() {
+        let _ = nsproc::unmount_detach(t);
+    }
 }
 
 fn mount_pseudo(fstype: &str, target: &str) -> Result<()> {

@@ -76,7 +76,7 @@ tampering. two read-only checks:
 - `verify()` hashes every object and compares against its name, failing with
   `Corrupt { hash }` on the first mismatch. a missing objects directory is an
   empty store, which is fine. call it before serving so corruption surfaces
-  early, not mid-compose. `Core::verify_store()` is the facade for it.
+  early, not mid-compose. `Core::verify_store()` is the public api for it.
 - `verify_tree(tree)` checks the objects one tree references. tree files are
   hardlinks to their objects, so tampering with a file changes both the link
   and the object and the hash stops matching.
@@ -95,5 +95,5 @@ remove objects whose inode no live tree pins
 
 tracking by inode is what makes this safe: a live tree pins a shared object
 through its hardlink, so an object stays as long as any kept tree links it. the
-facade `Core::gc()` gathers the live set by reading every generation's tree
+`Core::gc()` gathers the live set by reading every generation's tree
 list, then calls this.

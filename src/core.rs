@@ -1,4 +1,4 @@
-// the facade policy drives. holds layers, backend and the ns registry,
+// the entry point policy drives. holds layers, backend and the ns registry,
 // and exposes the two operations: boot a layer, run a command in one
 
 use crate::api::{
@@ -117,7 +117,7 @@ impl Core {
 
     // build and pin a layer's namespace ahead of use. for the daemon
     pub fn build(&mut self, id: &str) -> Result<()> {
-        // an invalid id cannot name a real layer, so it is simply unknown
+        // an invalid id cannot name a real layer, it is unknown
         let id = LayerId::new(id).map_err(|_| Error::UnknownLayer(id.to_string()))?;
         let desc = self.find(&id)?.clone();
         self.registry.ensure(&self.layout, &desc, &*self.backend, &self.system.globals)?;
@@ -155,21 +155,16 @@ impl Core {
         health: &dyn HealthCheck,
         native_init: &str,
     ) -> Result<()> {
-        // as pid 1, block stray signals: an unhandled SIGTERM/SIGINT/SIGHUP
-        // would kill init and panic the kernel
         block_signals()?;
-        // reap kernel-spawned children during the boot window; they would
-        // zombie under pid 1 otherwise. stopped at handoff
-        let reaper = Reaper::spawn()?;
         early_mounts(&self.layout, &self.system.pseudo)?;
         let id = selector.select(&self.layers, health, &self.layout.store())?;
         let desc = self.find(&id)?.clone();
         let layer =
             self.registry.ensure(&self.layout, &desc, &*self.backend, &self.system.globals)?;
-        reaper.stop();
-        // the selected layer, including the native init we are about to exec,
-        // runs under the layer's resource scope
+        // reaper after compose: compose may fork and must be single-threaded
+        let reaper = Reaper::spawn()?;
         self.enter_scope(&desc)?;
+        reaper.stop();
         crate::init::handoff(&layer, native_init)
     }
 

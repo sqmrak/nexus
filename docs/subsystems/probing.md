@@ -70,5 +70,5 @@ each feature has a defined behaviour when absent:
 - no cgroup v2 > scopes are skipped and programs run unconfined, rather than
   failing to launch.
 
-`Core::open` reflects this: it warms the probes, picks the backend, and enables
+`Core::open` reflects this: it build  the probes, picks the backend, and enables
 cgroup controllers only when cgroup v2 is usable.

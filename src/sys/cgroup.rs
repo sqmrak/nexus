@@ -85,13 +85,13 @@ impl Cgroups {
         Ok(())
     }
 
-    // step the calling process back to the unified root, the one cgroup exempt
-    // from the no-internal-process rule. lets a failed launch vacate its leaf
-    // so the now-empty scope can be removed
+    // best effort: in a delegated subtree writing to the root cgroup.procs
+    // may be forbidden. a failed leave only means the process stays in its
+    // leaf, remove() cleans the scope regardless
     pub fn leave(&self) -> Result<()> {
         let path = Path::new(CGROUP2_ROOT).join(vocab::CG_PROCS);
-        std::fs::write(&path, std::process::id().to_string())
-            .map_err(|e| Error::Io(format!("leave to cgroup root: {e}")))
+        let _ = std::fs::write(&path, std::process::id().to_string());
+        Ok(())
     }
 
     // remove an empty leaf scope. an absent scope is already gone, so that is

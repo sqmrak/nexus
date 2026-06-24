@@ -15,7 +15,7 @@ through the socket; there is nothing to pass.
 requests:
 
 ```
-build <layer>   build and pin the layer's namespace now (warm it)
+build <layer>   build and pin the layer's namespace now (build it)
 evict <layer>   drop the layer's namespace, unmounting its pin
 list            list the built layers
 status          daemon liveness and the built count
@@ -38,13 +38,13 @@ and rejects a missing argument or an unknown verb with a config error.
 each request maps onto one `Core` operation:
 
 ```
-build <id>  >  core.warm(&id)       >  ok | err
+build <id>  >  core.build(&id)       >  ok | err
 evict <id>  >  core.evict(&id)      >  ok        (always; an unknown id is a no-op)
 list        >  core.built_layers()  >  lines
 status      >  "built <n>"          >  lines
 ```
 
-`warm` builds and pins the namespace ahead of use, so the first user-visible
+`build` builds and pins the namespace ahead of use, so the first user-visible
 launch of that layer is already hot (it skips the cold compose described in
 [run](../paths/run.md)). `evict` drops the namespace and its resource scope; a
 later run rebuilds it.

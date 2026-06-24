@@ -93,6 +93,6 @@ deny list, are in [the sandbox](../subsystems/sandbox.md).
 if the layer's namespace is not built yet, `ensure` runs the full compose and
 pin (see [namespaces](../model/namespaces.md)) before the path above continues.
 that cost is paid once; subsequent runs of any command in the same layer skip
-straight to `enter_scope > setns`. the control daemon's `warm` command exists to
+straight to `enter_scope > setns`. the control daemon's `build` command exists to
 pay that cost ahead of time so the first user-visible launch is already hot; see
 [the control daemon](../subsystems/control.md).

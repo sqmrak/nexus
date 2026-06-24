@@ -21,7 +21,7 @@ impl OverlayBackend {
     fn lowerdir(&self, layer: &LayerDescriptor) -> String {
         let usr = self.store_root.join(layer.id.as_str());
         let base = self.store_root.join("base");
-        // a layer literally named "base" is its own base: listing the dir
+        // a layer named "base" is its own base: listing the dir
         // twice is an overlapping lower, which overlay rejects with ELOOP
         if base.is_dir() && base != usr {
             format!("{}:{}", usr.display(), base.display())
@@ -48,12 +48,19 @@ impl OverlayBackend {
     // inside it. returns the two paths as strings for the overlay config
     fn tmpfs_upper(&self, layer: &LayerDescriptor) -> Result<(String, String)> {
         let base = self.ephemeral_base(layer);
+        require_no_symlink_ancestor(&base, &self.state_root)?;
         mkdir_all(&base)?;
         mount::mount_tmpfs(&base.display().to_string())?;
         let upper = base.join("upper");
         let work = base.join("work");
-        mkdir_all(&upper)?;
-        mkdir_all(&work)?;
+        if let Err(e) = mkdir_all(&upper) {
+            let _ = nsproc::unmount_detach(&base.display().to_string());
+            return Err(e);
+        }
+        if let Err(e) = mkdir_all(&work) {
+            let _ = nsproc::unmount_detach(&base.display().to_string());
+            return Err(e);
+        }
         Ok((upper.display().to_string(), work.display().to_string()))
     }
 }
