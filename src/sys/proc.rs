@@ -8,11 +8,10 @@ pub(crate) fn thread_count() -> Option<usize> {
 }
 
 // panics if any thread beyond the caller exists. libtest runs multi-threaded,
-// so this is skipped in test builds; in release builds a multi-threaded fork
-// is UB and must be caught at the call site
+// so this is skipped in test builds. a debug assert: spark has its own live
+// fork guard that surfaces the message to the user in all build profiles
 pub(crate) fn assert_fork_safe() {
-    #[cfg(not(test))]
-    assert!(
+    debug_assert!(
         thread_count().is_none_or(|n| n <= 1),
         "fork() from a multi-threaded process: child may deadlock or hit UB"
     );
