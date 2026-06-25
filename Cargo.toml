@@ -6,7 +6,7 @@ version = "1.0.2"
 edition = "2024"
 rust-version = "1.85"
 description = "metadistribution core"
-license = "GPL-2.0"
+license = "GPL-2.0-only"
 
 [dependencies]
 blake3 = "1"
