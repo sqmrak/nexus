@@ -19,4 +19,4 @@ https://github.com/bedrocklinux/bedrocklinux-userland
 
 ## license
 
-GPL-2.0.
+GPL-2.0-only
