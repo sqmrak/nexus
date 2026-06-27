@@ -44,18 +44,23 @@ if the tree dir is absent, materialize it (hardlink objects, mkdir, symlink)
 return the tree hash
 ```
 
-two details matter for correctness under concurrency:
+three details matter for correctness:
 
 - the object lock is an exclusive `flock` on `objects/.lock`, held while
-  objects are placed. it serializes across processes, not just threads, so two
+  objects are placed. it serializes across processes, not just threads; two
   concurrent imports never write a torn duplicate.
-- staged temp objects are named `.stage-<pid>-<nonce>`, where the nonce is an
-  atomic per-process counter. concurrent imports never collide on a temp name.
+- staged temp objects are named `.stage-<pid>-<nonce>`, the nonce an atomic
+  per-process counter. concurrent imports never collide on a temp name. a
+  `.stage-` file left by a crashed import is swept on the next import, under
+  the lock.
+- each object's content is fsynced before the rename that places it. the
+  objects directory is fsynced before the tree hardlinks to it. the tree
+  directory entry is fsynced after its rename. a power loss leaves a placed
+  object whole or absent, never named with unwritten bytes.
 
 materialization is atomic: the tree is built at a `.tmp` sibling and renamed
-into place, so a crash never leaves a partial tree. because the manifest is
-sorted, the materializer creates parents before children and needs no
-`create_dir_all`.
+into place. a crash never leaves a partial tree. the sorted manifest lets the
+materializer create parents before children with no `create_dir_all`.
 
 ## deduplication and hardlinks
 

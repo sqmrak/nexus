@@ -89,15 +89,19 @@ is policy; this is the core's safe default.
 ```
 default action: Allow
 matched action: Errno(1)   (EPERM)
-denied:  mount, umount2, kexec_load, init_module, finit_module, delete_module
+denied:  mount, umount2, the new mount api
+         (open_tree, move_mount, fsopen, fsconfig, fsmount, fspick, mount_setattr),
+         kexec_load, kexec_file_load, init_module, finit_module, delete_module
 ```
 
 these are the calls that reconfigure the process's mounts or load kernel code.
-the deny table carries one row per syscall with both the x86_64 and aarch64
-numbers, so the two architectures cannot drift apart, and the right column is
-selected at compile time for the target arch. an unsupported architecture yields
-no filter and the baseline reports it as an error rather than silently running
-unfiltered.
+both the classic `mount(2)` and the new mount api (5.2+) are denied. the new
+api is the path the kernel mounts through; blocking only the classic call
+leaves a hole. the deny table carries one row per syscall
+with both the x86_64 and aarch64 numbers, so the two architectures cannot drift
+apart, and the right column is selected at compile time for the target arch. an
+unsupported architecture yields no filter and the baseline reports it as an
+error rather than silently running unfiltered.
 
 ## idmap
 

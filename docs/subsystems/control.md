@@ -61,8 +61,9 @@ loop until stop:
 ```
 
 the non-blocking listener with a 200 ms `poll` timeout lets the loop notice the
-shutdown flag even while idle. a bad connection is handled and dropped; it never
-takes the daemon down.
+shutdown flag even while idle. an accepted connection gets a 5 second read and
+write timeout: a peer that connects then stalls cannot pin the single-threaded
+loop. a bad connection is handled and dropped; it never takes the daemon down.
 
 shutdown is async-signal-safe. `install_signal_stop` installs `SIGINT` and
 `SIGTERM` handlers that do nothing but an atomic store, with no `SA_RESTART` so

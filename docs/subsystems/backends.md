@@ -70,6 +70,11 @@ and `work` subdirectories created inside it (overlay requires upper and work on
 the same filesystem). `LayerFlags::no_persistent_upper` and `ephemeral_upper`
 encode the precedence; atomic wins if both atomic and ephemeral are set.
 
+before creating a persistent on-disk upper or work directory, both backends
+check that no ancestor under the state root is a symlink. a replaced ancestor
+could divert the writable dirs outside the intended tree; the mount is refused
+in that case.
+
 ## OverlayBackend
 
 the reference backend. it composes a layer by stacking an overlay:

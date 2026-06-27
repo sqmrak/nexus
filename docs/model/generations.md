@@ -25,7 +25,9 @@ recording a generation and switching to it are two steps, on purpose.
 
 - `commit(hashes)` writes a new generation directory, numbered one past the
   highest existing one (or 1 if none), listing the given tree hashes. it does
-  not change `current`.
+  not change `current`. the allocate-and-write runs under an exclusive `flock`
+  on the generation root: two concurrent commits never pick the same number.
+  the manifest, its directory and the root are fsynced before commit returns.
 - `activate(g)` switches `current` to point at generation `g`.
 
 separating them means a meta-distro can build a generation, verify it, and only
