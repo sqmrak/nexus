@@ -88,14 +88,25 @@ fn seccomp_baseline() -> Result<()> {
 }
 
 // one row per syscall covers x86_64 and aarch64 so the two arches cannot
-// drift apart. the calls reconfigure the process or load kernel code
+// drift apart. the calls reconfigure mounts (the classic and the new mount
+// api) or load kernel code
 const DENY: &[(&str, i64, i64)] = &[
     ("mount", 165, 40),
     ("umount2", 166, 39),
     ("kexec_load", 246, 104),
+    ("kexec_file_load", 320, 294),
     ("init_module", 175, 105),
     ("finit_module", 313, 273),
     ("delete_module", 176, 106),
+    // the new mount api (5.2+), the path the kernel actually mounts through,
+    // so blocking only the classic mount(2) left a hole
+    ("open_tree", 428, 428),
+    ("move_mount", 429, 429),
+    ("fsopen", 430, 430),
+    ("fsconfig", 431, 431),
+    ("fsmount", 432, 432),
+    ("fspick", 433, 433),
+    ("mount_setattr", 442, 442),
 ];
 
 // the target cpu and its deny-list numbers; returns None on unsupported arch
