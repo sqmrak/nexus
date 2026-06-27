@@ -92,8 +92,8 @@ impl Generations {
         std::fs::create_dir_all(&dir).map_err(|e| Error::Io(format!("mkdir {dir:?}: {e}")))?;
         let manifest: String = hashes.iter().map(|h| format!("{h}\n")).collect();
         let layers = dir.join("layers");
-        let mut f =
-            std::fs::File::create(&layers).map_err(|e| Error::Io(format!("write manifest: {e}")))?;
+        let mut f = std::fs::File::create(&layers)
+            .map_err(|e| Error::Io(format!("write manifest: {e}")))?;
         f.write_all(manifest.as_bytes()).map_err(|e| Error::Io(format!("write manifest: {e}")))?;
         // the manifest content, then the gen dir entry, must both be durable:
         // gc trusts the manifest to list a generation's live trees
