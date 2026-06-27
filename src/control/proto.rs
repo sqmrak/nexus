@@ -5,7 +5,6 @@ use crate::api::{Error, Result};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Request {
-    // build and pin a layer's namespace now
     Build(String),
     // drop a layer's namespace, unmounting its pin
     Evict(String),
