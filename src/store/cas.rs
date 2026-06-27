@@ -80,9 +80,15 @@ impl Store {
         std::fs::create_dir_all(self.objects()).map_err(|e| mk("objects", e))?;
         // the pool lock serializes object placement across processes via flock
         let _lock = ObjectLock::acquire(&self.objects())?;
+        // under the lock, any leftover stage temp is from a crashed import, so
+        // sweep it: verify/gc skip dotfiles, so it would otherwise accumulate
+        sweep_stage_temps(&self.objects());
         let mut entries = Vec::new();
         self.ingest(src, Path::new(""), &mut entries)?;
         entries.sort_by(|a, b| a.rel.cmp(&b.rel));
+        // objects are placed by rename during ingest; make those directory
+        // entries durable before the tree hardlinks to them
+        fsync_dir(&self.objects())?;
 
         let manifest = manifest_text(&entries);
         let tree = ObjectHash::new(blake3::hash(manifest.as_bytes()).to_hex().to_string());
@@ -295,6 +301,12 @@ impl Store {
                 return Err(mk("stage object", e));
             }
         }
+        // the content must be on disk before the rename publishes the object,
+        // or a crash could leave a named object with unwritten bytes
+        if let Err(e) = out.sync_all() {
+            let _ = std::fs::remove_file(&tmp);
+            return Err(mk("sync object", e));
+        }
         Ok((hasher.finalize().to_hex().to_string(), tmp))
     }
 
@@ -323,7 +335,10 @@ impl Store {
             }
         }
         std::fs::create_dir_all(self.trees()).map_err(|e| mk("trees", e))?;
-        std::fs::rename(&tmp, dst).map_err(|e| mk("rename tree", e))
+        std::fs::rename(&tmp, dst).map_err(|e| mk("rename tree", e))?;
+        // the tree directory entry must be durable, or a crash could leave a
+        // committed generation referencing a tree that is not on disk
+        fsync_dir(&self.trees())
     }
 }
 
@@ -392,6 +407,26 @@ fn set_mode(p: &Path, mode: u32) -> Result<()> {
 
 fn mk(op: &str, e: std::io::Error) -> Error {
     Error::Io(format!("store {op}: {e}"))
+}
+
+// fsync a directory so a rename into it survives a crash. opening a directory
+// read-only and sync_all'ing it flushes the directory entry on unix
+fn fsync_dir(dir: &Path) -> Result<()> {
+    let f = std::fs::File::open(dir).map_err(|e| mk("open dir", e))?;
+    f.sync_all().map_err(|e| mk("sync dir", e))
+}
+
+// remove stage temp files left by a crashed import. safe under the pool lock:
+// a live import holds the lock, so any .stage- file here is abandoned
+fn sweep_stage_temps(objects: &Path) {
+    let Ok(rd) = std::fs::read_dir(objects) else {
+        return;
+    };
+    for ent in rd.flatten() {
+        if ent.file_name().to_string_lossy().starts_with(".stage-") {
+            let _ = std::fs::remove_file(ent.path());
+        }
+    }
 }
 
 fn hash_file(path: &Path) -> Result<String> {

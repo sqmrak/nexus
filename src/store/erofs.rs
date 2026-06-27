@@ -2,7 +2,7 @@
 // is built at install/forge time, this backend only mounts it
 
 use crate::api::{LayerDescriptor, Mounts, Result, StoreBackend};
-use crate::paths::mkdir_all;
+use crate::paths::{mkdir_all, require_no_symlink_ancestor};
 use crate::sys::{mount, nsproc};
 use crate::vocab;
 use std::os::fd::{AsFd, BorrowedFd};
@@ -84,6 +84,11 @@ impl StoreBackend for ErofsBackend {
         } else if !layer.flags.no_persistent_upper() {
             let upper = self.state_root.join("upper").join(layer.id.as_str());
             let work = self.state_root.join("work").join(layer.id.as_str());
+            // refuse if an ancestor was replaced with a symlink that would
+            // divert the writable dirs outside the state tree (overlay guards
+            // this too)
+            require_no_symlink_ancestor(&upper, &self.state_root)?;
+            require_no_symlink_ancestor(&work, &self.state_root)?;
             mkdir_all(&upper)?;
             mkdir_all(&work)?;
             mount::fsconfig_string(fs.as_fd(), vocab::OPT_UPPERDIR, &upper.display().to_string())?;

@@ -112,6 +112,11 @@ fn wait_readable(listener: &UnixListener, timeout: Duration) -> bool {
 }
 
 fn handle(stream: UnixStream, core: &mut Core) -> Result<()> {
+    // a client that connects and then stalls must not pin the single-threaded
+    // accept loop. bound both directions so a silent peer times out
+    let t = Some(Duration::from_secs(5));
+    stream.set_read_timeout(t).map_err(io_err)?;
+    stream.set_write_timeout(t).map_err(io_err)?;
     let mut reader = BufReader::new(stream.try_clone().map_err(io_err)?);
     let mut line = String::new();
     reader.read_line(&mut line).map_err(io_err)?;

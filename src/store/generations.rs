@@ -2,10 +2,43 @@
 // type owns the path math; it resolves and proposes, does not write yet
 
 use crate::api::{Error, Gen, ObjectHash, Result};
+use rustix::fs::{FlockOperation, flock};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 pub struct Generations {
     root: PathBuf,
+}
+
+// an exclusive flock under the gen root, held while a generation is allocated
+// and written, so two commits never pick the same number. released on drop
+struct GenLock(std::fs::File);
+
+impl GenLock {
+    fn acquire(root: &Path) -> Result<Self> {
+        std::fs::create_dir_all(root).map_err(|e| Error::Io(format!("mkdir {root:?}: {e}")))?;
+        let f = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(false)
+            .open(root.join(".lock"))
+            .map_err(|e| Error::Io(format!("open gen lock: {e}")))?;
+        flock(&f, FlockOperation::LockExclusive)
+            .map_err(|e| Error::Io(format!("lock gens: {e}")))?;
+        Ok(GenLock(f))
+    }
+}
+
+impl Drop for GenLock {
+    fn drop(&mut self) {
+        let _ = flock(&self.0, FlockOperation::Unlock);
+    }
+}
+
+// fsync a directory so a rename or create into it survives a crash
+fn fsync_dir(dir: &Path) -> Result<()> {
+    let f = std::fs::File::open(dir).map_err(|e| Error::Io(format!("open dir {dir:?}: {e}")))?;
+    f.sync_all().map_err(|e| Error::Io(format!("sync dir {dir:?}: {e}")))
 }
 
 impl Generations {
@@ -51,12 +84,22 @@ impl Generations {
     // write a new gen directory listing its layer hashes, one per
     // line. does not switch current; call activate for that
     pub fn commit(&self, hashes: &[ObjectHash]) -> Result<Gen> {
+        // hold the lock across allocate and write, so two commits never read
+        // the same max and pick the same number
+        let _lock = GenLock::acquire(&self.root)?;
         let g = self.next()?;
         let dir = self.path(g);
         std::fs::create_dir_all(&dir).map_err(|e| Error::Io(format!("mkdir {dir:?}: {e}")))?;
         let manifest: String = hashes.iter().map(|h| format!("{h}\n")).collect();
-        std::fs::write(dir.join("layers"), manifest)
-            .map_err(|e| Error::Io(format!("write manifest: {e}")))?;
+        let layers = dir.join("layers");
+        let mut f =
+            std::fs::File::create(&layers).map_err(|e| Error::Io(format!("write manifest: {e}")))?;
+        f.write_all(manifest.as_bytes()).map_err(|e| Error::Io(format!("write manifest: {e}")))?;
+        // the manifest content, then the gen dir entry, must both be durable:
+        // gc trusts the manifest to list a generation's live trees
+        f.sync_all().map_err(|e| Error::Io(format!("sync manifest: {e}")))?;
+        fsync_dir(&dir)?;
+        fsync_dir(&self.root)?;
         Ok(g)
     }
 
@@ -71,7 +114,10 @@ impl Generations {
         std::os::unix::fs::symlink(g.get().to_string(), &tmp)
             .map_err(|e| Error::Io(format!("symlink: {e}")))?;
         std::fs::rename(&tmp, self.current_link())
-            .map_err(|e| Error::Io(format!("rename current: {e}")))
+            .map_err(|e| Error::Io(format!("rename current: {e}")))?;
+        // the swapped current symlink must survive a crash, or a rollback can
+        // be lost on power loss
+        fsync_dir(&self.root)
     }
 
     // every existing gen number, ascending. a missing root is no gens
